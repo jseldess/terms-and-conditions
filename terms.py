@@ -59,19 +59,18 @@ with open(args.terms_file) as terms, open(args.poetry_file) as poetry:
     lines_seen = set()
     total_lines = 0
     while len(terms) > 0 and len(poetry) > 0:
-        # If --max_lines is passed, break out of the loop
-        # as soon as the max lines have been written.
-        if args.max_lines:
-            if total_lines == args.max_lines:
-                break
-
         # Randomly select a line from the terms text and remove it from source.
         tline = random.choice(terms)
         terms.remove(tline)
         if not tline.isspace():
-            remove = 0
+            # If --max_lines is passed, break out of the loop
+            # as soon as the max lines have been written.
+            if args.max_lines:
+                if total_lines >= args.max_lines:
+                    break
             # If --max_words_from_line is passed, randomly select the specified
             # num of words from the start, middle, or end of the line.
+            remove = 0
             if args.max_words_per_line:
                 if len(re.findall(r'\w+', tline)) > args.max_words_per_line:
                     remove = len(re.findall(r'\w+', tline)) - args.max_words_per_line
@@ -109,6 +108,11 @@ with open(args.terms_file) as terms, open(args.poetry_file) as poetry:
         pline = random.choice(poetry)
         poetry.remove(pline)
         if not pline.isspace():
+            # If --max_lines is passed, break out of the loop
+            # as soon as the max lines have been written.
+            if args.max_lines:
+                if total_lines >= args.max_lines:
+                    break
             # If --random_skip is passed, randomly skip the line
             # and continue the next iteration of the loop.
             # To increase the chance of skips, add 1s to the list.
