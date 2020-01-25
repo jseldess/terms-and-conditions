@@ -1,7 +1,7 @@
 """Create a new file with a random permutation of lines from a
-text file with a combination of terms/privacy/data policy-type web pages
-and a text file with poetry, with options to set a max number of lines,
-set a max number of words per line, and use only unique lines
+text file with content from a variety of terms/privacy/data policy-type
+web pages and a text file with poetry, with options to set a max number
+of lines, set a max number of words per line, and use only unique lines.
 
 Help: python3 terms.py --help
 
@@ -30,10 +30,10 @@ from time import gmtime, strftime
 
 
 parser = argparse.ArgumentParser(
-    description = """Create a new file with a random permutation of lines from a
-    text file with a combination of terms/privacy/data policy-type web pages
-    and a text file with poetry, with options to set a max number of lines,
-    set a max number of words per line, and use only unique lines."""
+    description = """Create a new file with a random permutation of lines from
+    a text file with content from a variety of terms/privacy/data policy-type
+    web pages and a text file with poetry, with options to set a max number
+    of lines, set a max number of words per line, and use only unique lines."""
 )
 parser.add_argument(
     "-prurl",
@@ -44,41 +44,40 @@ parser.add_argument(
 )
 parser.add_argument(
     "-prf",
-    "--privacy_file",
-    help = """Source privacy text file (default: source/privacy.txt)""",
+    "--privacy_source",
+    help = "Source privacy text file.",
     default = "source/privacy.txt"
 )
 parser.add_argument(
     "-pof",
-    "--poetry_file",
-    help = "Source poetry text file (default: source/poetry.txt)",
+    "--poetry_source",
+    help = "Source poetry text file.",
     default = "source/poetry.txt"
 )
 parser.add_argument(
     "-d",
-    "--new_file_dir",
-    help = """Path to the directory where the new file will be created
-    (default: generated_files)""",
+    "--new_poem_dir",
+    help = "Path to the directory where the new poem will be created.",
     default = "generated_files"
 )
 parser.add_argument(
     "-u",
     "--unique_lines",
     action = "store_true",
-    help = "Use each unique line from the source file only once (default: False)"
+    help = "Use each unique line from the source texts only once."
 )
 parser.add_argument(
     "-ml",
     "--max_lines",
     type = int,
-    help = "Max number of lines of text in total"
+    help = "Max number of lines in the new poem."
 )
 parser.add_argument(
     "-mw",
     "--max_words_per_line",
     type = int,
-    help= """Max number of words per line, retaining words from the
-    start, middle, or end of the line""",
+    help= """Max number of words per line in the new poem, retaining words from the
+    start, middle, or end of the line.""",
     default = 8
 )
 parser.add_argument(
@@ -90,78 +89,93 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-poetry = open(args.poetry_file).readlines()
-privacy = open(args.privacy_file).readlines()
+poetry = open(args.poetry_source).readlines()
+privacy = open(args.privacy_source).readlines()
 lines_seen = set()
 total_lines = 0
 
 
 def capture_policy(url):
     """
-    Get html from a web page, convert it to markdown, and append it to a file.
+    Get html from a webpage, convert it to markdown, and append it
+    to the privacy source text file.
+
+    Arguments:
+    url -- the URL of the webpage
     """
     t_maker = html2text.HTML2Text()
     t_maker.ignore_links = True
     t_maker.ignore_images = True
     t_maker.ignore_emphasis = True
     html = requests.get(url)
-    print(html)
     text = t_maker.handle(html.text)
-    file = open(os.path.join("source", "privacy.txt"), "a")
-    file.write(text)
+    privacy_source = open(args.privacy_source, "a")
+    privacy_source.write(text)
 
 
 def choose_line(text):
     """
-    Choose a random line from a source text, write it to a file, and remove it
-    from the source text.
+    Choose a random line from a source text.
+
+    Arguments:
+    text -- the source text
     """
     global poetry
     global privacy
     global lines_seen
-    global total_lines
-    tline = random.choice(text)
-    text.remove(tline)
-    if len(tline) > 0:
-        if tline.isupper():
-            tline = tline.lower()
+    line = random.choice(text)
+    text.remove(line)
+    if len(line) > 0:
+        if line.isupper():
+            line = line.lower()
         # If line contains multiple sentences, randomly choose one
         # and remove extra spaces and punction.
-        tline = random.choice(tline.split('.'))
-        tline = re.sub(r"[^\w\'\-\s]", "", tline).strip()
-        print(tline)
+        line = random.choice(line.split('.'))
+        line = re.sub(r"[^\w\'\-\s]", "", line).strip()
+        print(line)
         # If the line exceeds --max_words_from_line, randomly choose the
         # specified num of words from the start, middle, or end of the line.
-        remove = 0
+        words_removed = 0
         if args.max_words_per_line:
-            if len(tline.split()) > args.max_words_per_line:
-                remove = len(tline.split()) - args.max_words_per_line
-                start = ' '.join(tline.split(' ')[:-remove])
-                middle = ' '.join(tline.split(' ')[remove // 2:-(remove // 2)])
-                end = ' '.join(tline.split(' ')[remove:])
-                tline = random.choice([start, middle, end]).strip()
-        print(tline)
+            if len(line.split()) > args.max_words_per_line:
+                words_removed = len(line.split()) - args.max_words_per_line
+                start = ' '.join(line.split(' ')[:-words_removed])
+                middle = ' '.join(line.split(' ')[words_removed // 2:-(words_removed // 2)])
+                end = ' '.join(line.split(' ')[words_removed:])
+                line = random.choice([start, middle, end]).strip()
+        print(line)
         # If --unique_lines is set, check if the line was seen in a previous
-        # iteration. If not, write the line to new_file and add it to lines_seen.
+        # iteration. If not, write the line to new_poem and add it to lines_seen.
         if args.unique_lines:
-            if tline.lower() in lines_seen:
+            if line.lower() in lines_seen:
                 return
-            lines_seen.add(tline.lower())
-        if tline.isspace() or len(tline) < 1:
+            lines_seen.add(line.lower())
+        if line.isspace() or len(line) < 1:
             print("Skip empty line\n")
             return
-        if not tline.isascii():
+        if not line.isascii():
             print("Skip non-ascii line\n")
             return
-        new_file.write(tline + "\n")
-        print("Write line | Words removed: ", str(remove))
-        total_lines += 1
-        print(total_lines, "/", args.max_lines, "\n")
-        # Unless --no_stanzas is set, radomly write 0, 1, 2, 3, or 4 empty lines
-        # to new_file, with 0 weighted heavier.
-        if not args.no_stanzas:
-            new_file.write(random.choice([
-            "", "", "", "", "", "\n", "\n\n", "\n\n\n", "\n\n\n\n"]))
+        write_line(line, words_removed)
+
+
+def write_line(line, words_removed):
+    """
+    Write a line to a file and possibly write 1-4 empty lines.
+
+    Arguments:
+    line -- the line line to write to the file
+    """
+    global total_lines
+    new_poem.write(line + "\n")
+    print("Write line | Words removed: ", str(words_removed))
+    total_lines += 1
+    print(total_lines, "/", args.max_lines, "\n")
+    # Unless --no_stanzas is set, radomly write 0, 1, 2, 3, or 4 empty lines
+    # to new_poem, with 0 weighted heavier.
+    if not args.no_stanzas:
+        new_poem.write(random.choice([
+        "", "", "", "", "", "\n", "\n\n", "\n\n\n", "\n\n\n\n"]))
 
 
 # If --privacy_url is set, capture the text from a (policy-type) web page,
@@ -170,8 +184,8 @@ if args.privacy_url:
     capture_policy(args.privacy_url)
 
 # Create a new directory for generated files, if it doesn't exist.
-if not os.path.exists(args.new_file_dir):
-    os.makedirs(args.new_file_dir)
+if not os.path.exists(args.new_poem_dir):
+    os.makedirs(args.new_poem_dir)
 
 # Create a new file named with the current timestamp and flags passed.
 filename = strftime("%Y-%m-%d-%H:%M:%S", gmtime())
@@ -182,15 +196,13 @@ if args.max_lines:
 if args.max_words_per_line:
     filename += "_maxwords" + str(args.max_words_per_line)
 filename += "_py.txt"
-new_file = open(os.path.join(args.new_file_dir, filename), "a", os.O_NONBLOCK)
+new_poem = open(os.path.join(args.new_poem_dir, filename), "a", os.O_NONBLOCK)
 
 while len(privacy) > 0 and len(poetry) > 0:
     if args.max_lines:
         if total_lines >= args.max_lines:
             break
-    choose_line(privacy)
-    choose_line(poetry)
-    # choose_line(random.choice([privacy, poetry]))
+    choose_line(random.choice([privacy, poetry, poetry]))
 
 print("File {} created".format(filename))
 print("Total lines: {}".format(total_lines))
