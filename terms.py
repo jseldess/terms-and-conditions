@@ -132,7 +132,7 @@ def choose_line(text):
         # and remove extra spaces and punction.
         line = random.choice(line.split('.'))
         line = re.sub(r"[^\w\'\-\s]", "", line).strip()
-        print(line)
+        # print(line)
         # If the line exceeds --max_words_from_line, randomly choose the
         # specified num of words from the start, middle, or end of the line.
         words_removed = 0
@@ -143,7 +143,6 @@ def choose_line(text):
                 middle = ' '.join(line.split(' ')[words_removed // 2:-(words_removed // 2)])
                 end = ' '.join(line.split(' ')[words_removed:])
                 line = random.choice([start, middle, end]).strip()
-        print(line)
         # If --unique_lines is set, check if the line was seen in a previous
         # iteration. If not, write the line to new_poem and add it to lines_seen.
         if args.unique_lines:
@@ -168,9 +167,10 @@ def write_line(line, words_removed):
     """
     global total_lines
     new_poem.write(line + "\n")
-    print("Write line | Words removed: ", str(words_removed))
     total_lines += 1
-    print(total_lines, "/", args.max_lines, "\n")
+    print(total_lines, "/", args.max_lines)
+    print(line)
+    print("Words removed: ", str(words_removed), "\n")
     # Unless --no_stanzas is set, radomly write 0, 1, 2, 3, or 4 empty lines
     # to new_poem, with 0 weighted heavier.
     if not args.no_stanzas:
