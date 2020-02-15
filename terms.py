@@ -140,7 +140,7 @@ def choose_line(text):
             if len(line.split()) > args.max_words_per_line:
                 words_removed = len(line.split()) - args.max_words_per_line
                 start = ' '.join(line.split(' ')[:-words_removed])
-                middle = ' '.join(line.split(' ')[words_removed // 2:-(words_removed // 2)])
+                middle = ' '.join(line.split(' ')[(words_removed // 2):-(words_removed // 2)])
                 end = ' '.join(line.split(' ')[words_removed:])
                 line = random.choice([start, middle, end]).strip()
         # If --unique_lines is set, check if the line was seen in a previous
@@ -197,6 +197,7 @@ if args.max_words_per_line:
     filename += "_maxwords" + str(args.max_words_per_line)
 filename += "_py.txt"
 new_poem = open(os.path.join(args.new_poem_dir, filename), "a", os.O_NONBLOCK)
+new_poem.write(strftime("%Y-%m-%d-%H:%M:%S", gmtime()) + "\n\n\n")
 
 while len(privacy) > 0 and len(poetry) > 0:
     if args.max_lines:
