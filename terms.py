@@ -93,6 +93,7 @@ poetry = open(args.poetry_source).readlines()
 privacy = open(args.privacy_source).readlines()
 lines_seen = set()
 total_lines = 0
+pattern = ""
 
 
 def capture_policy(url):
@@ -115,7 +116,9 @@ def capture_policy(url):
 
 def choose_line(text):
     """
-    Choose a random line from a source text.
+    Choose a random line from the privay text, or choose a line from
+    the poetry text the includes the last three characters of the last
+    word of the previously chosen line from the privay text.
 
     Arguments:
     text -- the source text
@@ -123,7 +126,14 @@ def choose_line(text):
     global poetry
     global privacy
     global lines_seen
+    global pattern
     line = random.choice(text)
+    if text == poetry:
+        if pattern is not "":
+            for l in text:
+                if re.search(pattern, l) is not None:
+                    line = l
+                    continue
     text.remove(line)
     if len(line) > 0:
         if line.isupper():
@@ -136,13 +146,15 @@ def choose_line(text):
         # If the line exceeds --max_words_from_line, randomly choose the
         # specified num of words from the start, middle, or end of the line.
         words_removed = 0
-        if args.max_words_per_line:
-            if len(line.split()) > args.max_words_per_line:
-                words_removed = len(line.split()) - args.max_words_per_line
-                start = ' '.join(line.split(' ')[:-words_removed])
-                middle = ' '.join(line.split(' ')[(words_removed // 2):-(words_removed // 2)])
-                end = ' '.join(line.split(' ')[words_removed:])
-                line = random.choice([start, middle, end]).strip()
+        if text == privacy:
+            if args.max_words_per_line:
+                if len(line.split()) > args.max_words_per_line:
+                    words_removed = len(line.split()) - args.max_words_per_line
+                    start = ' '.join(line.split(' ')[:-words_removed])
+                    middle = ' '.join(line.split(' ')[(words_removed // 2):-(words_removed // 2)])
+                    end = ' '.join(line.split(' ')[words_removed:])
+                    line = random.choice([start, middle, end]).strip()
+            pattern = line[-3:]
         # If --unique_lines is set, check if the line was seen in a previous
         # iteration. If not, write the line to new_poem and add it to lines_seen.
         if args.unique_lines:
@@ -155,21 +167,28 @@ def choose_line(text):
         if not line.isascii():
             print("Skip non-ascii line\n")
             return
-        write_line(line, words_removed)
+        write_line(line, text, words_removed)
 
 
-def write_line(line, words_removed):
+def write_line(line, text, words_removed):
     """
     Write a line to a file and possibly write 1-4 empty lines.
 
     Arguments:
-    line -- the line line to write to the file
+    line -- the line to write to the file
     """
     global total_lines
+    global pattern
     new_poem.write(line + "\n")
     total_lines += 1
     print(total_lines, "/", args.max_lines)
     print(line)
+    if text == privacy:
+        print("Text: privacy")
+    else:
+        print("Text: poetry")
+        print("Pattern: ", pattern)
+        # pattern = ""
     print("Words removed: ", str(words_removed), "\n")
     # Unless --no_stanzas is set, radomly write 0, 1, 2, 3, or 4 empty lines
     # to new_poem, with 0 weighted heavier.
@@ -200,10 +219,11 @@ new_poem = open(os.path.join(args.new_poem_dir, filename), "a", os.O_NONBLOCK)
 new_poem.write(strftime("%Y-%m-%d-%H:%M:%S", gmtime()) + "\n\n\n")
 
 while len(privacy) > 0 and len(poetry) > 0:
+    choose_line(random.choice([privacy, poetry, poetry, poetry]))
     if args.max_lines:
         if total_lines >= args.max_lines:
             break
-    choose_line(random.choice([privacy, poetry, poetry]))
+
 
 print("File {} created".format(filename))
 print("Total lines: {}".format(total_lines))
